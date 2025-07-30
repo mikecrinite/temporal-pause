@@ -10,8 +10,8 @@ I couldn't really find a good example of this, but I needed to learn how it work
 
 `temporal server start-dev`
 
-The Temporal Service will be available on localhost:7233.
-The Temporal Web UI will be available at http://localhost:8233.
+- The Temporal Service will be available on localhost:7233.
+- The Temporal Web UI will be available at http://localhost:8233.
 
 ### Start the workflow execution (hopefully that's the correct wording)
 
