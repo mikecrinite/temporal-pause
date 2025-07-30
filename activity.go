@@ -2,44 +2,33 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"log"
+	"time"
+
+	"go.temporal.io/sdk/activity"
 )
 
-func Withdraw(ctx context.Context, data PaymentDetails) (string, error) {
-	log.Printf("Withdrawing $%d from account %s.\n\n",
-		data.Amount,
-		data.SourceAccount,
-	)
+var TokenMap = map[string][]byte{}
 
-	referenceID := fmt.Sprintf("%s-withdrawal", data.ReferenceID)
-	bank := BankingService{"bank-api.example.com"}
-	confirmation, err := bank.Withdraw(data.SourceAccount, data.Amount, referenceID)
-	return confirmation, err
+func Pause(ctx context.Context, data PaymentDetails) (string, error) {
+	log.Printf("Starting an activity and pausing it immediately")
+
+	taskToken := activity.GetInfo(ctx).TaskToken
+	log.Printf("Got a task token!")
+	TokenMap["taskToken"] = taskToken
+
+	return "", activity.ErrResultPending
 }
 
-func Deposit(ctx context.Context, data PaymentDetails) (string, error) {
-	log.Printf("Depositing $%d into account %s.\n\n",
-		data.Amount,
-		data.TargetAccount,
-	)
+func DoWork(ctx context.Context) ([]byte, error) {
+	// Wait
+	log.Printf("Waiting 10s")
+	time.Sleep(10 * time.Second)
+	log.Printf("Finished Waiting")
 
-	referenceID := fmt.Sprintf("%s-deposit", data.ReferenceID)
-	bank := BankingService{"bank-api.example.com"}
-	// Uncomment the next line and comment the one after that to simulate an unknown failure
-	// confirmation, err := bank.DepositThatFails(data.TargetAccount, data.Amount, referenceID)
-	confirmation, err := bank.Deposit(data.TargetAccount, data.Amount, referenceID)
-	return confirmation, err
-}
+	// Complete activity
+	taskToken := TokenMap["taskToken"]
+	log.Printf("Retrieved this token: " + string(taskToken))
 
-func Refund(ctx context.Context, data PaymentDetails) (string, error) {
-	log.Printf("Refunding $%v back into account %v.\n\n",
-		data.Amount,
-		data.SourceAccount,
-	)
-
-	referenceID := fmt.Sprintf("%s-refund", data.ReferenceID)
-	bank := BankingService{"bank-api.example.com"}
-	confirmation, err := bank.Deposit(data.SourceAccount, data.Amount, referenceID)
-	return confirmation, err
+	return taskToken, nil
 }

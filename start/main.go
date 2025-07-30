@@ -28,13 +28,13 @@ func main() {
 	}
 
 	options := client.StartWorkflowOptions{
-		ID:        "pay-invoice-701",
+		ID:        "pause-workflow",
 		TaskQueue: app.MoneyTransferTaskQueueName,
 	}
 
-	log.Printf("Starting transfer from account %s to account %s for %d", input.SourceAccount, input.TargetAccount, input.Amount)
+	log.Printf("Starting workflow")
 
-	we, err := c.ExecuteWorkflow(context.Background(), options, app.MoneyTransfer, input)
+	we, err := c.ExecuteWorkflow(context.Background(), options, app.Workflow, input)
 	if err != nil {
 		log.Fatalln("Unable to start the Workflow:", err)
 	}

@@ -1,22 +1,23 @@
 package app
 
 import (
-	"fmt"
+	"context"
 	"time"
+	"log"
 
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
+	"go.temporal.io/sdk/client"
 )
 
-// @@@SNIPSTART money-transfer-project-template-go-workflow
-func MoneyTransfer(ctx workflow.Context, input PaymentDetails) (string, error) {
-
+func Workflow(ctx workflow.Context, input PaymentDetails) (string, error) {
+	log.Printf("WORKFLOW STARTED!")
 	// RetryPolicy specifies how to automatically handle retries if an Activity fails.
 	retrypolicy := &temporal.RetryPolicy{
 		InitialInterval:        time.Second,
 		BackoffCoefficient:     2.0,
 		MaximumInterval:        100 * time.Second,
-		MaximumAttempts:        500, // 0 is unlimited retries
+		MaximumAttempts:        0, // 0 is unlimited retries
 		NonRetryableErrorTypes: []string{"InvalidAccountError", "InsufficientFundsError"},
 	}
 
@@ -31,39 +32,21 @@ func MoneyTransfer(ctx workflow.Context, input PaymentDetails) (string, error) {
 	// Apply the options.
 	ctx = workflow.WithActivityOptions(ctx, options)
 
-	// Withdraw money.
-	var withdrawOutput string
+	// Execute the pause activity
+	_ = workflow.ExecuteActivity(ctx, Pause, input)//.Get(ctx, "")
 
-	withdrawErr := workflow.ExecuteActivity(ctx, Withdraw, input).Get(ctx, &withdrawOutput)
-
-	if withdrawErr != nil {
-		return "", withdrawErr
+	// Grab a client to complete the activity
+	c, err := client.Dial(client.Options{})
+	if err != nil {
+		log.Printf("Error!!!!!!!!!!", err)
 	}
 
-	// Deposit money.
-	var depositOutput string
+	// Pretend to do something for 10s
+	var taskToken []byte
+	_ = workflow.ExecuteActivity(ctx, DoWork, c).Get(ctx, &taskToken)
+	
+	// Now that we've done 10s of work, we can finish
+	c.CompleteActivity(context.Background(), taskToken, "Complete!", nil)
 
-	depositErr := workflow.ExecuteActivity(ctx, Deposit, input).Get(ctx, &depositOutput)
-
-	if depositErr != nil {
-		// The deposit failed; put money back in original account.
-
-		var result string
-
-		refundErr := workflow.ExecuteActivity(ctx, Refund, input).Get(ctx, &result)
-
-		if refundErr != nil {
-			return "",
-				fmt.Errorf("Deposit: failed to deposit money into %v: %v. Money could not be returned to %v: %w",
-					input.TargetAccount, depositErr, input.SourceAccount, refundErr)
-		}
-
-		return "", fmt.Errorf("Deposit: failed to deposit money into %v: Money returned to %v: %w",
-			input.TargetAccount, input.SourceAccount, depositErr)
-	}
-
-	result := fmt.Sprintf("Transfer complete (transaction IDs: %s, %s)", withdrawOutput, depositOutput)
-	return result, nil
+	return "Complete!", nil
 }
-
-// @@@SNIPEND
