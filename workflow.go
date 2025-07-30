@@ -33,7 +33,8 @@ func Workflow(ctx workflow.Context, input PaymentDetails) (string, error) {
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	// Execute the pause activity
-	_ = workflow.ExecuteActivity(ctx, Pause, input)//.Get(ctx, "")
+	//var result string
+	_ = workflow.ExecuteActivity(ctx, Pause, input)//.Get(ctx, &result)
 
 	// Grab a client to complete the activity
 	c, err := client.Dial(client.Options{})
