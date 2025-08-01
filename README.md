@@ -21,6 +21,14 @@ You should see a workflow pop up on the Temporal Web UI. You can open it for som
 
 ### Start the worker
 
-` go run worker/main.go`
+`go run worker/main.go`
 
-Now the worker will poll the queue, see the workflow, run the activities, and you'll see the pause/resume steps happen. Right now, the workflow doesn't wait for the pause step to finish (obviously it can't in this scenario, because it will finish it itself. In real life, another service would resume the activity)
+Now the worker will poll the queue, see the workflow, and start running the activities. The "DoWork" activity just has a 5s sleep right now to simulate something happening. This isn't really that important, you can remove this or replace it with whatever you need. 
+
+Once it finishes waiting, it will move on to the Pause step which should wait indefinitely.
+
+### Resume the workflow by completing the activity
+
+`go run start/resume.go`
+
+This will read the taskToken from the `./tmp/tasktoken` file and dial up a client to call `client.CompleteActivity()`. You should be able to see the activity finish immediately if you have the UI up, and the workflow will be marked as "Completed"

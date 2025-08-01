@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	"go.temporal.io/sdk/client"
 
 	"temporal-pause/app"
 )
 
-// @@@SNIPSTART money-transfer-project-template-go-start-workflow
 func main() {
 	// Create the client object just once per process
 	c, err := client.Dial(client.Options{})
@@ -28,7 +28,7 @@ func main() {
 	}
 
 	options := client.StartWorkflowOptions{
-		ID:        "pause-workflow",
+		ID:        string(time.Now().UTC().Format(time.RFC3339)) + "_pause-workflow",
 		TaskQueue: app.MoneyTransferTaskQueueName,
 	}
 
@@ -41,6 +41,7 @@ func main() {
 
 	log.Printf("WorkflowID: %s RunID: %s\n", we.GetID(), we.GetRunID())
 
+
 	var result string
 
 	err = we.Get(context.Background(), &result)
@@ -52,4 +53,3 @@ func main() {
 	log.Println(result)
 }
 
-// @@@SNIPEND

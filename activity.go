@@ -4,35 +4,39 @@ import (
 	"context"
 	"log"
 	"time"
+	"os"
 
 	"go.temporal.io/sdk/activity"
 )
 
-// This should probably be stored outside the service. This is just an example
-var TokenMap = map[string][]byte{}
-
 func Pause(ctx context.Context, data PaymentDetails) (string, error) {
 	log.Printf("Starting the Pause activity")
 
-	// Simulate "things" happening
-	time.Sleep(1 * time.Second)
-
 	taskToken := activity.GetInfo(ctx).TaskToken
-	log.Printf("Enjoy your pause!")
-	TokenMap["taskToken"] = taskToken
+	log.Printf("Enjoy your pause! Writing taskToken to file")
 
-	return "", activity.ErrResultPending
+	f, err := os.Create("./tmp/tasktoken")
+		if err != nil {
+		log.Printf("Failed to create file", err)
+	}
+
+	defer f.Close()
+
+	_, err = f.Write(taskToken)
+	if err != nil {
+		log.Printf("Failed to write token to file", err)
+	}
+	
+	f.Sync()
+
+	return "Paused", activity.ErrResultPending
 }
 
-func DoWork(ctx context.Context) ([]byte, error) {
-	// Wait for 10 seconds to simulate some manual task that needs to be done
-	log.Printf("Waiting 10s")
-	time.Sleep(10 * time.Second)
+func DoWork(ctx context.Context) (string, error) {
+	// Wait for 5 seconds to simulate some manual task that needs to be done
+	log.Printf("Waiting 5s")
+	time.Sleep(5 * time.Second)
 	log.Printf("Finished Waiting")
 
-	// Complete activity
-	taskToken := TokenMap["taskToken"]
-	log.Printf("Retrieved this token: " + string(taskToken))
-
-	return taskToken, nil
+	return "Finished Doing Work", nil
 }

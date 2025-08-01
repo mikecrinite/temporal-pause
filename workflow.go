@@ -1,13 +1,12 @@
 package app
 
 import (
-	"context"
+	//"context"
 	"time"
 	"log"
 
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
-	"go.temporal.io/sdk/client"
 )
 
 func Workflow(ctx workflow.Context, input PaymentDetails) (string, error) {
@@ -32,22 +31,15 @@ func Workflow(ctx workflow.Context, input PaymentDetails) (string, error) {
 	// Apply the options.
 	ctx = workflow.WithActivityOptions(ctx, options)
 
-	// Execute the pause activity
-	//var result string
-	_ = workflow.ExecuteActivity(ctx, Pause, input)//.Get(ctx, &result)
-
-	// Grab a client to complete the activity
-	c, err := client.Dial(client.Options{})
-	if err != nil {
-		log.Printf("Error!!!!!!!!!!", err)
-	}
-
 	// Pretend to do something for 10s
-	var taskToken []byte
-	_ = workflow.ExecuteActivity(ctx, DoWork, c).Get(ctx, &taskToken)
-	
-	// Now that we've done 10s of work, we can finish
-	c.CompleteActivity(context.Background(), taskToken, "Complete!", nil)
+	var result string
+	_ = workflow.ExecuteActivity(ctx, DoWork).Get(ctx, &result)
+	log.Printf("Got this result from DoWork: " + result)
 
-	return "Complete!", nil
+	// Execute the pause activity
+	_ = workflow.ExecuteActivity(ctx, Pause, input).Get(ctx, &result)
+
+	// Resume it by running /start/resume.go
+
+	return result, nil
 }
